@@ -1,0 +1,93 @@
+import java.util.*;
+
+class Solution {
+    public int[] maximumWeight(List<List<Integer>> intervals) {
+        int n = intervals.size();
+
+        int[][] a = new int[n][4];
+
+        for (int i = 0; i < n; i++) {
+            a[i][0] = intervals.get(i).get(0);
+            a[i][1] = intervals.get(i).get(1);
+            a[i][2] = intervals.get(i).get(2);
+            a[i][3] = i;
+        }
+
+        Arrays.sort(a, (x, y) -> {
+            if (x[1] != y[1]) return Integer.compare(x[1], y[1]);
+            return Integer.compare(x[3], y[3]);
+        });
+
+        long[][] dp = new long[n + 1][5];
+        List<Integer>[][] path = new ArrayList[n + 1][5];
+
+        for (int i = 0; i <= n; i++) {
+            for (int j = 0; j <= 4; j++) {
+                path[i][j] = new ArrayList<>();
+            }
+        }
+
+        for (int i = 1; i <= n; i++) {
+            int idx = i - 1;
+
+            for (int k = 1; k <= 4; k++) {
+                dp[i][k] = dp[i - 1][k];
+                path[i][k] = new ArrayList<>(path[i - 1][k]);
+
+                int p = findPrevious(a, i - 1);
+
+                long value = dp[p + 1][k - 1] + a[idx][2];
+
+                List<Integer> candidate =
+                    new ArrayList<>(path[p + 1][k - 1]);
+
+                candidate.add(a[idx][3]);
+                Collections.sort(candidate);
+
+                if (value > dp[i][k] ||
+                    (value == dp[i][k] &&
+                     lexicographicallySmaller(candidate, path[i][k]))) {
+
+                    dp[i][k] = value;
+                    path[i][k] = candidate;
+                }
+            }
+        }
+
+        List<Integer> answer = path[n][4];
+
+        return answer.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    private int findPrevious(int[][] a, int index) {
+        int left = 0, right = index - 1;
+        int ans = -1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            if (a[mid][1] < a[index][0]) {
+                ans = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return ans;
+    }
+
+    private boolean lexicographicallySmaller(
+            List<Integer> a, List<Integer> b) {
+
+        int n = Math.min(a.size(), b.size());
+
+        for (int i = 0; i < n; i++) {
+            if (!a.get(i).equals(b.get(i))) {
+                return a.get(i) < b.get(i);
+            }
+        }
+
+        return a.size() < b.size();
+    }
+}
